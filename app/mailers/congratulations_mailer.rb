@@ -1,0 +1,3 @@
+class CongratulationsMailer < ApplicationMailer
+
+end
