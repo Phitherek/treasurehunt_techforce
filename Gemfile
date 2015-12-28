@@ -43,8 +43,13 @@ group :development do
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'spring'
 end
+
+group :test do
+  gem 'rspec-rails'
+  gem 'factory_girl_rails'
+  gem 'shoulda-matchers'
+end
 gem 'haml-rails'
-gem 'rspec-rails'
 gem 'email_validator'
 gem 'pg'
 gem 'thin'
