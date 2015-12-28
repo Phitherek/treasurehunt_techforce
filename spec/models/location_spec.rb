@@ -3,6 +3,7 @@ require 'rails_helper'
 RSpec.describe Location, type: :model do
     it { is_expected.to validate_presence_of(:latitude) }
     it { is_expected.to validate_presence_of(:longitude) }
+    it { is_expected.to validate_presence_of(:user_id) }
     it { is_expected.to validate_numericality_of(:latitude).is_less_than_or_equal_to(90) }
     it { is_expected.to validate_numericality_of(:latitude).is_greater_than_or_equal_to(-90) }
     it { is_expected.to validate_numericality_of(:longitude).is_less_than_or_equal_to(180) }

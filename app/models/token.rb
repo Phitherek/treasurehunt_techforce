@@ -1,5 +1,6 @@
 class Token < ActiveRecord::Base
     belongs_to :user
+    validates :user_id, presence: true
     validates :token, presence: true, uniqueness: true
     before_validation :generate_token
 

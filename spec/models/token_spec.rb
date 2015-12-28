@@ -2,6 +2,7 @@ require 'rails_helper'
 
 RSpec.describe Token, type: :model do
   it { is_expected.to validate_uniqueness_of(:token) }
+  it { is_expected.to validate_presence_of(:user_id) }
   it "should generate a unique token on create" do
       u = create(:user)
       t = Token.create(user: u)
