@@ -21,3 +21,4 @@
 
 en:
   hello: "Hello world"
+  up_and_running: The endpoint is up and running.
