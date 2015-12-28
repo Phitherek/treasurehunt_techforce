@@ -1,6 +1,7 @@
 class Location < ActiveRecord::Base
     TREASURE_LAT = 50.051227
     TREASURE_LON = 19.945704
+    R = 6371000 # Earth' s radius
 
     belongs_to :user
 
@@ -9,7 +10,6 @@ class Location < ActiveRecord::Base
 
     def radius
         # Haversine formula
-        R = 6371000 # Earth' s radius
         phi1 = latitude * Math::PI / 180
         phi2 = TREASURE_LAT * Math::PI / 180
         dphi = (TREASURE_LAT - longitude) * Math::PI / 180
