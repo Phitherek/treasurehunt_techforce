@@ -54,7 +54,21 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
+
+  # factory_girl config
+
+  config.include FactoryGirl::Syntax::Methods
+  config.before(:suite) do
+    begin
+      DatabaseCleaner.start
+      FactoryGirl.lint
+    ensure
+      DatabaseCleaner.clean
+    end
+  end
 end
+
+# shoulda-matchers config
 
 Shoulda::Matchers.configure do |config|
   config.integrate do |with|

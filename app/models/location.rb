@@ -10,16 +10,25 @@ class Location < ActiveRecord::Base
 
     def radius
         # Haversine formula
-        phi1 = latitude * Math::PI / 180
-        phi2 = TREASURE_LAT * Math::PI / 180
-        dphi = (TREASURE_LAT - longitude) * Math::PI / 180
-        dlambda = (latitude - TREASURE_LON) * Math::PI / 180
-        a = Math.sin(dphi/2) * Math.sin(dphi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dlambda/2) * Math.sin(dlambda/2)
-        c = 2*Math.atan2(sqrt(a), sqrt(1-a))
-        d = R*c
+        phi1 = Location.to_radians(self.latitude)
+        phi2 = Location.to_radians(TREASURE_LAT)
+        lambda1 = Location.to_radians(self.longitude)
+        lambda2 = Location.to_radians(TREASURE_LON)
+        h = Location.hav(phi2-phi1) + Math.cos(phi1)*Math.cos(phi2)*Location.hav(lambda2-lambda1)
+        d = 2*R*Math.asin(Math.sqrt(h))
     end
 
     def treasure?
         radius <= 5
+    end
+
+    private
+
+    def self.to_radians(deg)
+      deg * Math::PI / 180
+    end
+
+    def self.hav(theta)
+       (1-Math.cos(theta))/2  #/ Just a fix for syntax highlighting in jEdit
     end
 end
