@@ -1,3 +1,4 @@
+require 'time'
 class EndpointController < ApplicationController
 
     before_filter :check_token, only: [:logout]
@@ -7,11 +8,70 @@ class EndpointController < ApplicationController
     end
 
     def endpoint
-
+        tkn_info = ActionController::HttpAuthentication::Token.token_and_options(request)
+        if tkn_info.nil?
+            render json: {status: "error", distance: -1, error: "unauthorized"}
+        else
+            @token = Token.find_by_token(tkn_info[0])
+            if @token.nil?
+                render json: {status: "error", distance: -1, error: "unauthorized"}
+            end
+        end
+        if params[:current_location].blank? || params[:current_location].count < 2 || params[:email].blank?
+            render json: {status: "error", distance: -1, error: "missingparams"}
+        end
+        if @token.user.email != params[:email]
+            render json: {status: "error", distance: -1, error: "unauthorized"}
+        end
+        if @token.user.locations.where(:created_at > Time.now-1.hour).count >= 20
+            render json: {status: "error", distance: -1, error: "requestquota"}
+        end
+        @location = Location.create(latitude: params[:current_location][0], longitude: params[:current_location][1], user: @token.user)
+        if @location.new_record?
+            render json: {status: "error", distance: -1, error: "validation: " + @location.errors.full_messages.join(", ")}
+        else
+            if @location.treasure? && !@token.user.treasure?
+                CongratulationsMailer.congratulations_email(@token.user).deliver
+                @token.user.treasure = true
+                @token.user.save!
+            end
+            render json: {status: "ok", distance: @location.radius}
+        end
     end
 
     def analytics
-
+        tkn_info = ActionController::HttpAuthentication::Token.token_and_options(request)
+        if tkn_info.nil?
+            render json: {status: "error", requests: [], error: "unauthorized"}
+        else
+            @token = Token.find_by_token(tkn_info[0])
+            if @token.nil?
+                render json: {status: "error", requests: [], error: "unauthorized"}
+            end
+        end
+        if params[:start_time].blank? || params[:end_time].blank?
+            render json: {status: "error", requests: [], error: "missingparams"}
+        end
+        begin
+            st = Time.parse(params[:start_time])
+            et = Time.parse(params[:end_time])
+            locations = Location.where(:created_at > st).where(:created_at < et)
+            radius = params[:radius]
+            if !radius.nil?
+                radius = radius.to_f
+                rlocations = []
+                locations.each do |loc|
+                    if loc.radius <= radius
+                        rlocations << loc
+                    end
+                end
+                render json: {status: "ok", requests: ActiveModel::ArraySerializer.new(locations, each_serializer: RequestSerializer).as_json}
+            else
+                render json: {status: "ok", requests: ActiveModel::ArraySerializer.new(locations, each_serializer: RequestSerializer).as_json}
+            end
+        rescue ArgumentError => e
+            render json: {status: "error", requests: [], error: "timeparse: " + e.to_s}
+        end
     end
 
     def register

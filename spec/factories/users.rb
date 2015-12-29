@@ -7,6 +7,9 @@ FactoryGirl.define do
       user.password_confirmation = p
       user.save!
     end
+    factory :treasure_user do
+      treasure true
+    end
   end
 
 end
