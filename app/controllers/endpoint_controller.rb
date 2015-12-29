@@ -55,7 +55,7 @@ class EndpointController < ApplicationController
         begin
             st = Time.parse(params[:start_time])
             et = Time.parse(params[:end_time])
-            locations = Location.where(:created_at > st).where(:created_at < et)
+            locations = Location.where(created_at: st...et)
             radius = params[:radius]
             if !radius.nil?
                 radius = radius.to_f
@@ -65,7 +65,7 @@ class EndpointController < ApplicationController
                         rlocations << loc
                     end
                 end
-                render json: {status: "ok", requests: ActiveModel::ArraySerializer.new(locations, each_serializer: RequestSerializer).as_json}
+                render json: {status: "ok", requests: ActiveModel::ArraySerializer.new(rlocations, each_serializer: RequestSerializer).as_json}
             else
                 render json: {status: "ok", requests: ActiveModel::ArraySerializer.new(locations, each_serializer: RequestSerializer).as_json}
             end

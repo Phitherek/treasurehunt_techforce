@@ -195,5 +195,43 @@ RSpec.describe EndpointController, type: :controller do
             expect(response.content_type).to eq "application/json"
             expect(response.body).to eq "{\"status\":\"error\",\"requests\":[],\"error\":\"unauthorized\"}"
         end
+        describe "with correct token" do
+            before(:each) do
+                @token = create(:token)
+                @request.headers["HTTP_AUTHORIZATION"] =  ActionController::HttpAuthentication::Token.encode_credentials(@token.token)
+            end
+            it "should fail with appropriate response on missing or empty params" do
+                post :analytics
+                expect(response.content_type).to eq "application/json"
+                expect(response.body).to eq "{\"status\":\"error\",\"requests\":[],\"error\":\"missingparams\"}"
+                post :analytics, {start_time: "", end_time: ""}
+                expect(response.content_type).to eq "application/json"
+                expect(response.body).to eq "{\"status\":\"error\",\"requests\":[],\"error\":\"missingparams\"}"
+            end
+            it "should fail with appropriate response on wrong time format" do
+                post :analytics, {start_time: "-1", end_time: "-1"}
+                expect(response.content_type).to eq "application/json"
+                expect(response.body).to eq "{\"status\":\"error\",\"requests\":[],\"error\":\"timeparse: no time information in \\\"-1\\\"\"}"
+            end
+            it "should return appropriate response on correct query" do
+                post :analytics, {start_time: (Time.now-10.minutes).strftime("%F %T.%6N %z"), end_time: Time.now.strftime("%F %T.%6N %z")}
+                expect(response.content_type).to eq "application/json"
+                expect(response.body).to eq "{\"status\":\"ok\",\"requests\":[]}"
+            end
+            it "should return correct JSON" do
+                loc1 = create(:location)
+                loc2 = create(:location)
+                post :analytics, {start_time: (Time.now-10.minutes).strftime("%F %T.%6N %z"), end_time: Time.now.strftime("%F %T.%6N %z")}
+                expect(response.content_type).to eq "application/json"
+                expect(response.body).to eq "{\"status\":\"ok\",\"requests\":[{\"email\":\"#{loc1.user.email}\",\"current_location\":[#{loc1.latitude},#{loc1.longitude}]},{\"email\":\"#{loc2.user.email}\",\"current_location\":[#{loc2.latitude},#{loc2.longitude}]}]}"
+            end
+            it "should return correct JSON with radius" do
+                loc1 = create(:near_location)
+                loc2 = create(:distant_location)
+                post :analytics, {start_time: (Time.now-10.minutes).strftime("%F %T.%6N %z"), end_time: Time.now.strftime("%F %T.%6N %z"), radius: 5}
+                expect(response.content_type).to eq "application/json"
+                expect(response.body).to eq "{\"status\":\"ok\",\"requests\":[{\"email\":\"#{loc1.user.email}\",\"current_location\":[#{loc1.latitude},#{loc1.longitude}]}]}"
+            end
+        end
     end
 end
