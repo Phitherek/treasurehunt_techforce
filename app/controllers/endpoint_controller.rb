@@ -10,28 +10,28 @@ class EndpointController < ApplicationController
     def endpoint
         tkn_info = ActionController::HttpAuthentication::Token.token_and_options(request)
         if tkn_info.nil?
-            render json: {status: "error", distance: -1, error: "unauthorized"}
+            render json: {status: "error", distance: -1, error: "unauthorized"} and return
         else
             @token = Token.find_by_token(tkn_info[0])
             if @token.nil?
-                render json: {status: "error", distance: -1, error: "unauthorized"}
+                render json: {status: "error", distance: -1, error: "unauthorized"} and return
             end
         end
         if params[:current_location].blank? || params[:current_location].count < 2 || params[:email].blank?
-            render json: {status: "error", distance: -1, error: "missingparams"}
+            render json: {status: "error", distance: -1, error: "missingparams"} and return
         end
         if @token.user.email != params[:email]
-            render json: {status: "error", distance: -1, error: "unauthorized"}
+            render json: {status: "error", distance: -1, error: "unauthorized"} and return
         end
-        if @token.user.locations.where(:created_at > Time.now-1.hour).count >= 20
-            render json: {status: "error", distance: -1, error: "requestquota"}
+        if @token.user.locations.where(created_at: Time.now-1.hour...Time.now).count >= 20
+            render json: {status: "error", distance: -1, error: "requestquota"} and return
         end
         @location = Location.create(latitude: params[:current_location][0], longitude: params[:current_location][1], user: @token.user)
         if @location.new_record?
             render json: {status: "error", distance: -1, error: "validation: " + @location.errors.full_messages.join(", ")}
         else
             if @location.treasure? && !@token.user.treasure?
-                CongratulationsMailer.congratulations_email(@token.user).deliver
+                CongratulationsMailer.congratulations_email(@token.user).deliver_now
                 @token.user.treasure = true
                 @token.user.save!
             end
@@ -42,15 +42,15 @@ class EndpointController < ApplicationController
     def analytics
         tkn_info = ActionController::HttpAuthentication::Token.token_and_options(request)
         if tkn_info.nil?
-            render json: {status: "error", requests: [], error: "unauthorized"}
+            render json: {status: "error", requests: [], error: "unauthorized"} and return
         else
             @token = Token.find_by_token(tkn_info[0])
             if @token.nil?
-                render json: {status: "error", requests: [], error: "unauthorized"}
+                render json: {status: "error", requests: [], error: "unauthorized"} and return
             end
         end
         if params[:start_time].blank? || params[:end_time].blank?
-            render json: {status: "error", requests: [], error: "missingparams"}
+            render json: {status: "error", requests: [], error: "missingparams"} and return
         end
         begin
             st = Time.parse(params[:start_time])
@@ -125,11 +125,11 @@ class EndpointController < ApplicationController
     def check_token
         tkn_info = ActionController::HttpAuthentication::Token.token_and_options(request)
         if tkn_info.nil?
-            render json: {error: "unauthorized"}
+            render json: {error: "unauthorized"} and return
         else
             @token = Token.find_by_token(tkn_info[0])
             if @token.nil?
-                render json: {error: "unauthorized"}
+                render json: {error: "unauthorized"} and return
             end
         end
     end
