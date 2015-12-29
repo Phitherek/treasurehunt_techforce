@@ -55,4 +55,8 @@ Rails.application.routes.draw do
   #   end
 
   root to: "endpoint#web"
+
+  post "/register", to: "endpoint#register"
+  post "/login", to: "endpoint#login"
+  post "/logout", to: "endpoint#logout"
 end
