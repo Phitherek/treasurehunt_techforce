@@ -97,7 +97,7 @@ RSpec.describe EndpointController, type: :controller do
     end
     describe "endpoint" do
         it "should fail with appropriate response on missing token" do
-            post :endpoint
+            get :endpoint
             expect(response.content_type).to eq "application/json"
             expect(response.body).to eq "{\"status\":\"error\",\"distance\":-1,\"error\":\"unauthorized\"}"
         end
@@ -105,7 +105,7 @@ RSpec.describe EndpointController, type: :controller do
             t = build(:token)
             u = t.user
             @request.headers["HTTP_AUTHORIZATION"] =  ActionController::HttpAuthentication::Token.encode_credentials(t.token)
-            post :endpoint
+            get :endpoint
             expect(response.content_type).to eq "application/json"
             expect(response.body).to eq "{\"status\":\"error\",\"distance\":-1,\"error\":\"unauthorized\"}"
         end
@@ -115,35 +115,35 @@ RSpec.describe EndpointController, type: :controller do
                 @request.headers["HTTP_AUTHORIZATION"] =  ActionController::HttpAuthentication::Token.encode_credentials(@token.token)
             end
             it "should fail with appropriate response on missing or empty params" do
-                post :endpoint
+                get :endpoint
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"error\",\"distance\":-1,\"error\":\"missingparams\"}"
-                post :endpoint, {current_location: ["", ""], email: ""}
+                get :endpoint, {current_location: ["", ""], email: ""}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"error\",\"distance\":-1,\"error\":\"missingparams\"}"
             end
             it "should fail with appropriate response on email not matching token credentials" do
                 loc = build(:location)
-                post :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
+                get :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"error\",\"distance\":-1,\"error\":\"unauthorized\"}"
             end
             it "should fail with appropriate response on incorrect coordinates" do
-                post :endpoint, {current_location: [200, -200], email: @token.user.email}
+                get :endpoint, {current_location: [200, -200], email: @token.user.email}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"error\",\"distance\":-1,\"error\":\"validation: Latitude must be less than or equal to 90, Longitude must be greater than or equal to -180\"}"
             end
             it "should appropriately respond on correct request" do
                 loc = build(:location)
                 loc.user = @token.user
-                post :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
+                get :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"ok\",\"distance\":#{loc.radius}}"
             end
             it "should appropriately respond, send email and set treasure on correct request with near location" do
                 loc = build(:near_location)
                 loc.user = @token.user
-                post :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
+                get :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"ok\",\"distance\":#{loc.radius}}"
                 expect(ActionMailer::Base.deliveries.count).to be > 0
@@ -153,14 +153,14 @@ RSpec.describe EndpointController, type: :controller do
             it "should not send second email" do
                 loc = build(:near_location)
                 loc.user = @token.user
-                post :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
+                get :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"ok\",\"distance\":#{loc.radius}}"
                 expect(ActionMailer::Base.deliveries.count).to be > 0
                 @token.user.reload
                 expect(@token.user.treasure?).to be true
                 cnt = ActionMailer::Base.deliveries.count
-                post :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
+                get :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"ok\",\"distance\":#{loc.radius}}"
                 expect(ActionMailer::Base.deliveries.count).to eq(cnt)
@@ -169,13 +169,13 @@ RSpec.describe EndpointController, type: :controller do
                 20.times do
                     loc = build(:location)
                     loc.user = @token.user
-                    post :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
+                    get :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
                     expect(response.content_type).to eq "application/json"
                     expect(response.body).to eq "{\"status\":\"ok\",\"distance\":#{loc.radius}}"
                 end
                 loc = build(:location)
                 loc.user = @token.user
-                post :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
+                get :endpoint, {current_location: [loc.latitude, loc.longitude], email: loc.user.email}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"error\",\"distance\":-1,\"error\":\"requestquota\"}"
             end
@@ -183,7 +183,7 @@ RSpec.describe EndpointController, type: :controller do
     end
     describe "analytics" do
         it "should fail with appropriate response on missing token" do
-            post :analytics
+            get :analytics
             expect(response.content_type).to eq "application/json"
             expect(response.body).to eq "{\"status\":\"error\",\"requests\":[],\"error\":\"unauthorized\"}"
         end
@@ -191,7 +191,7 @@ RSpec.describe EndpointController, type: :controller do
             t = build(:token)
             u = t.user
             @request.headers["HTTP_AUTHORIZATION"] =  ActionController::HttpAuthentication::Token.encode_credentials(t.token)
-            post :analytics
+            get :analytics
             expect(response.content_type).to eq "application/json"
             expect(response.body).to eq "{\"status\":\"error\",\"requests\":[],\"error\":\"unauthorized\"}"
         end
@@ -201,34 +201,34 @@ RSpec.describe EndpointController, type: :controller do
                 @request.headers["HTTP_AUTHORIZATION"] =  ActionController::HttpAuthentication::Token.encode_credentials(@token.token)
             end
             it "should fail with appropriate response on missing or empty params" do
-                post :analytics
+                get :analytics
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"error\",\"requests\":[],\"error\":\"missingparams\"}"
-                post :analytics, {start_time: "", end_time: ""}
+                get :analytics, {start_time: "", end_time: ""}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"error\",\"requests\":[],\"error\":\"missingparams\"}"
             end
             it "should fail with appropriate response on wrong time format" do
-                post :analytics, {start_time: "-1", end_time: "-1"}
+                get :analytics, {start_time: "-1", end_time: "-1"}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"error\",\"requests\":[],\"error\":\"timeparse: no time information in \\\"-1\\\"\"}"
             end
             it "should return appropriate response on correct query" do
-                post :analytics, {start_time: (Time.now-10.minutes).strftime("%F %T.%6N %z"), end_time: Time.now.strftime("%F %T.%6N %z")}
+                get :analytics, {start_time: (Time.now-10.minutes).strftime("%F %T.%6N %z"), end_time: Time.now.strftime("%F %T.%6N %z")}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"ok\",\"requests\":[]}"
             end
             it "should return correct JSON" do
                 loc1 = create(:location)
                 loc2 = create(:location)
-                post :analytics, {start_time: (Time.now-10.minutes).strftime("%F %T.%6N %z"), end_time: Time.now.strftime("%F %T.%6N %z")}
+                get :analytics, {start_time: (Time.now-10.minutes).strftime("%F %T.%6N %z"), end_time: Time.now.strftime("%F %T.%6N %z")}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"ok\",\"requests\":[{\"email\":\"#{loc1.user.email}\",\"current_location\":[#{loc1.latitude},#{loc1.longitude}]},{\"email\":\"#{loc2.user.email}\",\"current_location\":[#{loc2.latitude},#{loc2.longitude}]}]}"
             end
             it "should return correct JSON with radius" do
                 loc1 = create(:near_location)
                 loc2 = create(:distant_location)
-                post :analytics, {start_time: (Time.now-10.minutes).strftime("%F %T.%6N %z"), end_time: Time.now.strftime("%F %T.%6N %z"), radius: 5}
+                get :analytics, {start_time: (Time.now-10.minutes).strftime("%F %T.%6N %z"), end_time: Time.now.strftime("%F %T.%6N %z"), radius: 5}
                 expect(response.content_type).to eq "application/json"
                 expect(response.body).to eq "{\"status\":\"ok\",\"requests\":[{\"email\":\"#{loc1.user.email}\",\"current_location\":[#{loc1.latitude},#{loc1.longitude}]}]}"
             end
