@@ -59,4 +59,6 @@ Rails.application.routes.draw do
   post "/register", to: "endpoint#register"
   post "/login", to: "endpoint#login"
   post "/logout", to: "endpoint#logout"
+  post "/treasure_hunt", to: "endpoint#endpoint",format: :json, as: :endpoint
+  post "/analytics", to: "endpoint#analytics", format: :json
 end
