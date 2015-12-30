@@ -1,4 +1,5 @@
 require 'time'
+require 'eventmachine'
 class EndpointController < ApplicationController
 
     before_filter :check_token, only: [:logout]
@@ -30,12 +31,18 @@ class EndpointController < ApplicationController
         if @location.new_record?
             render json: {status: "error", distance: -1, error: "validation: " + @location.errors.full_messages.join(", ")}
         else
+            treasure_changed = false
             if @location.treasure? && !@token.user.treasure?
                 CongratulationsMailer.congratulations_email(@token.user).deliver_now
                 @token.user.treasure = true
                 @token.user.save!
+                treasure_changed = true
             end
             render json: {status: "ok", distance: @location.radius}
+            send_to_stream({type: "request", status: "ok", email: @token.user.email, location: [@location.latitude, @location.longitude], distance: @location.radius}, request)
+            if treasure_changed
+                send_to_stream({type: "treasure", email: @token.user.email, num: User.where(treasure: true).count}, request)
+            end
         end
     end
 
@@ -130,6 +137,15 @@ class EndpointController < ApplicationController
             @token = Token.find_by_token(tkn_info[0])
             if @token.nil?
                 render json: {error: "unauthorized"} and return
+            end
+        end
+    end
+
+    def send_to_stream data, request
+        unless ENV['RAILS_ENV'] == 'test'
+            EM.run do
+                client = Faye::Client.new(request.protocol + request.host + ":" + request.port.to_s + "/stream")
+                client.publish('/stream', data)
             end
         end
     end
